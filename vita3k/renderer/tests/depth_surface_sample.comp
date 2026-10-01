@@ -1,0 +1,25 @@
+// Vita3K emulator project
+// Copyright (C) 2026 Vita3K team
+// SPDX-License-Identifier: GPL-2.0-or-later
+#version 450
+layout(local_size_x = 8, local_size_y = 8) in;
+#ifdef ASPECT_stencil
+layout(binding = 0) uniform usampler2D source;
+#else
+layout(binding = 0) uniform sampler2D source;
+#endif
+layout(binding = 1, std430) buffer Result {
+    vec2 source_size;
+    float values[];
+};
+layout(push_constant) uniform Params {
+    vec4 viewport;
+    uvec2 output_size;
+};
+void main() {
+    uvec2 p = gl_GlobalInvocationID.xy;
+    if (any(greaterThanEqual(p, output_size))) return;
+    if (all(equal(p, uvec2(0)))) source_size = vec2(textureSize(source, 0));
+    vec2 uv = (vec2(p) + 0.5) / vec2(output_size);
+    values[p.y * output_size.x + p.x] = float(textureLod(source, uv * viewport.zw + viewport.xy, 0).r);
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleExecutable</key><string>${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
+  <key>CFBundleIdentifier</key><string>dev.vita3k.Vita3KIos</string>
+  <key>CFBundleName</key><string>Veeb</string>
+  <key>CFBundleDisplayName</key><string>Veeb</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleIconFile</key><string>Veeb.icns</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>LSMinimumSystemVersion</key><string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
+  <key>Vita3KSaveContainer</key><string>iCloud.dev.vita3k.Vita3KIos</string>
+  <key>NSUbiquitousContainers</key><dict>
+    <key>iCloud.dev.vita3k.Vita3KIos</key><dict>
+      <key>NSUbiquitousContainerIsDocumentScopePublic</key><true/>
+      <key>NSUbiquitousContainerName</key><string>Veeb</string>
+      <key>NSUbiquitousContainerSupportedFolderLevels</key><string>Any</string>
+    </dict>
+  </dict>
+</dict></plist>

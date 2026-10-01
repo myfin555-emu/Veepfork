@@ -1,0 +1,216 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: C/C++ CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.build }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [linux, windows, macos, android, ios-simulator]
+        arch: [x64, arm, arm64]
+        exclude:
+          - build: windows
+            arch: arm
+          - build: macos
+            arch: arm
+          - build: ios-simulator
+            arch: arm
+
+        include:
+          - build: linux
+            os: ubuntu-latest
+            triplet: linux-release
+            vcpkg-root: /usr/local/share/vcpkg
+            extra-args: ""
+
+          - build: windows
+            os: windows-latest
+            triplet: win-llvm-static-release
+            vcpkg-root: C:\vcpkg
+            extra-args: --overlay-triplets=./triplets
+
+          - build: windows
+            os: windows-11-arm
+            arch: arm64
+
+          - build: mingw
+            os: windows-latest
+            triplet: mingw-static
+            vcpkg-root: C:\vcpkg
+            arch: x64
+            msystem: CLANG64
+            extra-args: ""
+
+          - build: mingw
+            os: windows-11-arm
+            triplet: mingw-static
+            vcpkg-root: C:\vcpkg
+            arch: arm64
+            msystem: CLANGARM64
+            extra-args: ""
+
+          - build: macos
+            os: macos-latest
+            triplet: osx-release
+            vcpkg-root: /Users/runner/vcpkg
+            extra-args: ""
+
+          - build: macos
+            os: macos-latest
+            arch: universal
+            triplet: osx-release
+            vcpkg-root: /Users/runner/vcpkg
+            extra-args: --overlay-triplets=./triplets
+
+          - build: freebsd
+            os: ubuntu-latest
+            arch: x64
+            triplet: freebsd
+            vcpkg-root: /usr/local/share/vcpkg
+            extra-args: ""
+
+          - build: android
+            os: ubuntu-latest
+            triplet: android-static-release
+            vcpkg-root: /usr/local/share/vcpkg
+            extra-args: ""
+
+          - build: android
+            arch: x64
+            triplet: android
+
+          - build: android
+            arch: arm
+            triplet: neon-android
+
+          - build: ios
+            os: macos-latest
+            arch: arm64
+            triplet: ios-release
+            vcpkg-root: /Users/runner/vcpkg
+            extra-args: ""
+
+          - build: ios-simulator
+            os: macos-latest
+            triplet: ios-simulator-release
+            vcpkg-root: /Users/runner/vcpkg
+            extra-args: ""
+
+          - build: ios-simulator
+            arch: x64
+            triplet: ios
+
+    steps:
+      - run: git config --global core.autocrlf input
+
+      - uses: actions/checkout@v6
+
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          pacboy: >-
+            toolchain:p
+            cmake:p
+            ninja:p
+        if: matrix.build == 'mingw'
+
+      - name: Set up build environment (macos-latest)
+        run: |
+          brew install nasm
+          git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+          echo VCPKG_ROOT="$HOME/vcpkg" >> "$GITHUB_ENV"
+          echo "$HOME/vcpkg" >> "$GITHUB_PATH"
+        if: matrix.os == 'macos-latest'
+
+      - name: Set up build environment (ubuntu-latest)
+        run: |
+          sudo apt-get update
+          sudo apt -y install nasm
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Set up build environment (ubuntu-latest arm)
+        run: |
+          sudo apt-get install -qy binutils-arm-linux-gnueabihf gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm'
+
+      - name: Set up build environment (ubuntu-latest arm64)
+        run: |
+          sudo apt-get install -qy binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+
+      - name: Patch vcpkg
+        run: |
+          (cd ${{ matrix.vcpkg-root }} && git fetch origin)
+          (cd ${{ matrix.vcpkg-root }} && git reset --hard)
+          (cd ${{ matrix.vcpkg-root }} && git checkout 34823ada10080ddca99b60e85f80f55e18a44eea)
+          (cd ${{ matrix.vcpkg-root }} && git apply --ignore-space-change --ignore-whitespace --3way ${{ github.workspace }}/ffmpeg.patch)
+
+      - name: Update vcpkg executable
+        run: ${{ matrix.vcpkg-root }}/bootstrap-vcpkg${{ case(startsWith(matrix.os, 'windows'), '.bat', '.sh') }}
+
+      - name: Build ffmpeg
+        run: |
+            vcpkg ${{ matrix.extra-args }} install ffmpeg[avcodec,avfilter,avdevice,avformat,swresample,swscale]:${{ matrix.arch }}-${{ matrix.triplet }}
+        if: matrix.build != 'mingw'
+
+      - name: Build ffmpeg (mingw)
+        shell: msys2 {0}
+        run: |
+            export PATH=$(cygpath '${{ matrix.vcpkg-root }}'):$PATH
+            vcpkg ${{ matrix.extra-args }} install ffmpeg[avcodec,avfilter,avdevice,avformat,swresample,swscale]:${{ matrix.arch }}-${{ matrix.triplet }}
+        if: matrix.build == 'mingw'
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ffmpeg-${{ matrix.build }}-${{ matrix.arch }}
+          path: ${{ matrix.vcpkg-root }}/packages/ffmpeg_${{ matrix.arch }}-${{ matrix.triplet }}/lib
+        if: ${{ always() }}
+
+  create-release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.repository_owner == 'Vita3K'
+    permissions:
+      contents: write
+    concurrency:
+      group: create-release
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+
+      - name: Compute short git commit SHA
+        run: |
+          commit_short_sha="$(git rev-parse --short ${{ github.sha }})"
+          echo $commit_short_sha
+          echo "COMMIT_SHORT_SHA=$commit_short_sha" >> $GITHUB_ENV
+
+      - name: Prepare artifacts
+        run: |
+          mkdir artifacts/
+          files=$(find . -name "ffmpeg-*")
+          for f in $files; do
+            echo "Compressing $f"
+            (cd $(basename $f) && zip -r ../artifacts/$(basename $f).zip *)
+          done
+          ls -al artifacts/
+
+      - name: Upload
+        uses: tcnksm/ghr@v0
+        with:
+          owner: ${{ github.repository_owner }}
+          repository: ffmpeg-core
+          name: Automatic FFmpeg CI builds (${{ env.COMMIT_SHORT_SHA }})
+          body: "Corresponding commit: ${{ github.sha }}"
+          tag: ${{ env.COMMIT_SHORT_SHA }}
+          path: artifacts/

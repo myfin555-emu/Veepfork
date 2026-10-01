@@ -1,0 +1,131 @@
+# Vita3K iOS shell app — DEVICE flavor.
+# The core is built by CMake (preset ios-device) and staged by
+# scripts/stage-core.sh, which also (re)generates this project.
+# For the simulator flavor use project-sim.yml (no MoltenVK slice available).
+
+name: Vita3K
+options:
+  bundleIdPrefix: dev.vita3k
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+  configs:
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      SWIFT_COMPILATION_MODE: wholemodule
+      GCC_OPTIMIZATION_LEVEL: "3"
+      LLVM_LTO: YES_THIN
+
+targets:
+  Vita3K:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Vita3KApp.swift
+      - path: App/Localization.swift
+      - path: App/Resources
+      - path: App/ContentView.swift
+      - path: App/EmulatorTheme.swift
+      - path: App/LibraryView.swift
+      - path: App/SettingsView.swift
+      - path: App/Vita3KCore.swift
+      - path: App/ImportStore.swift
+      - path: App/SaveSyncEngine.swift
+      - path: App/CloudSaveSync.swift
+      - path: App/GameConfigView.swift
+      - path: App/EmulationViewController.swift
+      - path: App/PerformanceOverlay.swift
+      - path: App/GameKeyboardView.swift
+      - path: App/Assets.xcassets
+      # Core immutable resources (step 6): the screen filter shaders are the
+      # same precompiled .spv binaries every platform uses; MoltenVK turns
+      # them into MSL at pipeline creation. Folder refs keep the layout the
+      # core expects: <bundle>/shaders-builtin/... and <bundle>/icons/...
+      - path: ../../vita3k/shaders-builtin
+        type: folder
+        buildPhase: resources
+      - path: ../../vita3k/icons
+        type: folder
+        buildPhase: resources
+      # NOTE: libVita3KCore.dylib is NOT a resource. Nested Mach-Os must be
+      # code-signed BEFORE the app's Code Sign step (device), so the preBuild
+      # script copies + signs it into Frameworks/ (the executable's only
+      # guaranteed rpath, @executable_path/Frameworks, is what resolves
+      # @rpath/libVita3KCore.dylib at launch).
+    preBuildScripts:
+      - name: Stage Vita3KCore
+        inputFiles:
+          - "$(SRCROOT)/Vendor/libVita3KCore.dylib"
+          - "$(SRCROOT)/Vendor/libVita3KCore.dylib.build-config"
+        outputFiles:
+          - "$(BUILT_PRODUCTS_DIR)/$(FULL_PRODUCT_NAME)/Frameworks/libVita3KCore.dylib"
+        script: |
+          set -e
+          CORE_CONFIG="$(cat "${SRCROOT}/Vendor/libVita3KCore.dylib.build-config")"
+          if [ "${CONFIGURATION}" = "Release" ] && [ "$CORE_CONFIG" != "Release" ]; then
+            echo "error: Release app requires a Release core (staged: $CORE_CONFIG). Rebuild with cmake --preset ios-device, then build and stage the core."
+            exit 1
+          fi
+          APP="${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}"
+          mkdir -p "$APP/Frameworks"
+          cp "${SRCROOT}/Vendor/libVita3KCore.dylib" "$APP/Frameworks/libVita3KCore.dylib"
+          # On device the nested dylib must carry a developer signature; on
+          # the simulator ad-hoc is enough. Skip entirely when signing is off.
+          if [ "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]; then
+            if [ "${PLATFORM_NAME}" = "iphoneos" ]; then
+              ID="${EXPANDED_CODE_SIGN_IDENTITY:-}"
+              [ -n "$ID" ] || { echo "error: Xcode did not resolve a signing identity for the selected team."; exit 1; }
+            else
+              ID="-"
+            fi
+            xcrun codesign --force --sign "$ID" "$APP/Frameworks/libVita3KCore.dylib"
+          fi
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.vita3k.Vita3KIos
+        ICLOUD_CONTAINER_IDENTIFIER: iCloud.dev.vita3k.Vita3KIos
+        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        # Pin to arm64: the staged core dylib and the MoltenVK slice are
+        # arm64-only. Release defaults to ONLY_ACTIVE_ARCH=NO and would also
+        # build x86_64, which fails to link the arm64 libraries.
+        ARCHS: arm64
+        SUPPORTED_ARCHS: arm64
+        # The staged core (libVita3KCore.dylib) is linked by name from Vendor/.
+        # MoltenVK (static XCFramework slice) is force-loaded into the app
+        # executable: the dylib resolves vkGetInstanceProcAddr from the app
+        # image at runtime (-undefined dynamic_lookup), and a plain -lMoltenVK
+        # would pull in no objects (nothing in the executable references
+        # those symbols) leaving dyld unable to load the core on device.
+        HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/Vendor/include"
+        OTHER_LDFLAGS:
+          - "-L$(SRCROOT)/Vendor"
+          - "-lVita3KCore"
+          - "-force_load"
+          - "$(SRCROOT)/Vendor/MoltenVK.xcframework/ios-arm64/libMoltenVK.a"
+          - "-lc++"
+    entitlements:
+      path: App/Vita3K.entitlements
+      properties:
+        com.apple.developer.icloud-container-identifiers: ["$(ICLOUD_CONTAINER_IDENTIFIER)"]
+        com.apple.developer.ubiquity-container-identifiers: ["$(ICLOUD_CONTAINER_IDENTIFIER)"]
+        com.apple.developer.icloud-services: [CloudDocuments]
+
+schemes:
+  Vita3K:
+    build:
+      targets:
+        Vita3K: all
+    run:
+      config: Release

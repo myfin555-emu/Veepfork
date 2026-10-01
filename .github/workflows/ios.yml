@@ -1,0 +1,42 @@
+name: iOS CI
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  ios-simulator:
+    name: iOS core + app (simulator arm64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup toolchain
+        run: |
+          xcodebuild -version
+          brew install ninja python@3.12
+
+      - name: Build core + app (simulator)
+        run: bash .ci/build-ios.sh simulator
+
+  ios-device:
+    name: iOS core + app (device arm64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup toolchain
+        run: |
+          xcodebuild -version
+          brew install ninja python@3.12
+
+      - name: Build core + app (device)
+        run: bash .ci/build-ios.sh device
