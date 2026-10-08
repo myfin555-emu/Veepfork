@@ -1,5 +1,40 @@
 import SwiftUI
 
+private struct EmptyLibraryView: View {
+    let isEmptyLibrary: Bool
+    let sessionReady: Bool
+    let isImporting: Bool
+    let importContent: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: isEmptyLibrary ? "gamecontroller" : "magnifyingglass")
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundStyle(EmulatorTheme.accent)
+            Text(LocalizedStringKey(isEmptyLibrary ? "Sua próxima aventura" : "Nenhum jogo encontrado"))
+                .font(.title3.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text(LocalizedStringKey(
+                isEmptyLibrary
+                    ? "Importe seus jogos e homebrews para começar. Arquivos VPK, ZIP, PKG e pastas são aceitos."
+                    : "Tente outra busca ou veja todos os jogos."
+            ))
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: 520)
+            if isEmptyLibrary {
+                Button("Importar jogo", action: importContent)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!sessionReady || isImporting)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+        .accessibilityElement(children: .contain)
+    }
+}
+
 struct LibraryView: View {
     @EnvironmentObject var controller: CoreController
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -58,17 +93,12 @@ struct LibraryView: View {
                     .accessibilityLabel(Text(LocalizedStringKey(listLayout ? "Exibir em grade" : "Exibir em lista")))
                 }
                 if games.isEmpty {
-                    ContentUnavailableView {
-                        Label(LocalizedStringKey(controller.apps.isEmpty ? "Sua próxima aventura" : "Nenhum jogo encontrado"),
-                              systemImage: controller.apps.isEmpty ? "gamecontroller" : "magnifyingglass")
-                    } description: {
-                        Text(LocalizedStringKey(controller.apps.isEmpty ? "Importe seus jogos e homebrews para começar. Arquivos VPK, ZIP, PKG e pastas são aceitos." : "Tente outra busca ou veja todos os jogos."))
-                    } actions: {
-                        if controller.apps.isEmpty {
-                            Button("Importar jogo", action: importContent).buttonStyle(.borderedProminent)
-                                .disabled(!controller.sessionInitialized || controller.isImporting)
-                        }
-                    }
+                    EmptyLibraryView(
+                        isEmptyLibrary: controller.apps.isEmpty,
+                        sessionReady: controller.sessionInitialized,
+                        isImporting: controller.isImporting,
+                        importContent: importContent
+                    )
                 } else if listLayout {
                     LazyVStack(spacing: 12) { ForEach(games) { game in gameRow(game) } }
                 } else {
