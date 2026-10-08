@@ -37,7 +37,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
 
   ios-device:
-    name: iOS core + app (device arm64)
+    name: iOS core + app + IPA (device arm64)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,9 +55,33 @@ jobs:
           cmake --build --preset ios-device --target vita3k --parallel
           bash ios/Vita3K/scripts/stage-core.sh device
 
-      - name: Build app (device, unsigned)
+      - name: Archive app (unsigned)
         run: |
+          rm -rf build/ios/Vita3K.xcarchive
           xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \
             -configuration Release -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+            -archivePath "$PWD/build/ios/Vita3K.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            archive
+
+      - name: Package unsigned IPA
+        run: |
+          rm -rf build/ios/ipa
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/Vita3K.xcarchive/Products/Applications/Vita3K.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          /usr/bin/zip -qry Vita3K.ipa Payload
+
+      - name: Verify IPA
+        run: |
+          test -f build/ios/ipa/Vita3K.ipa
+          ls -lh build/ios/ipa/Vita3K.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vita3K-iOS-unsigned
+          path: build/ios/ipa/Vita3K.ipa
+          if-no-files-found: error
+          retention-days: 14
