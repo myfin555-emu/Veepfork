@@ -24,7 +24,7 @@ jobs:
 
       - name: Build core + MoltenVK (simulator)
         run: |
-          cmake --preset ios-simulator
+          cmake --preset ios-simulator -DVITA3K_FFMPEG_SHA=e744193
           cmake --build --preset ios-simulator --target vita3k --parallel
           bash ios/Vita3K/scripts/build-moltenvk-sim.sh
           bash ios/Vita3K/scripts/stage-core.sh simulator
@@ -51,7 +51,7 @@ jobs:
 
       - name: Build core (device)
         run: |
-          cmake --preset ios-device
+          cmake --preset ios-device -DVITA3K_FFMPEG_SHA=e744193
           cmake --build --preset ios-device --target vita3k --parallel
           bash ios/Vita3K/scripts/stage-core.sh device
 
