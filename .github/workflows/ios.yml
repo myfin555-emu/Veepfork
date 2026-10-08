@@ -20,10 +20,21 @@ jobs:
       - name: Setup toolchain
         run: |
           xcodebuild -version
-          brew install ninja python@3.12
+          brew install ninja python@3.12 xcodegen
 
-      - name: Build core + app (simulator)
-        run: bash .ci/build-ios.sh simulator
+      - name: Build core + MoltenVK (simulator)
+        run: |
+          cmake --preset ios-simulator
+          cmake --build --preset ios-simulator --target vita3k --parallel
+          bash ios/Vita3K/scripts/build-moltenvk-sim.sh
+          bash ios/Vita3K/scripts/stage-core.sh simulator
+
+      - name: Build app (simulator)
+        run: |
+          xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \\
+            -configuration Release -sdk iphonesimulator \\
+            -destination 'generic/platform=iOS Simulator' \\
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
 
   ios-device:
     name: iOS core + app (device arm64)
@@ -36,7 +47,17 @@ jobs:
       - name: Setup toolchain
         run: |
           xcodebuild -version
-          brew install ninja python@3.12
+          brew install ninja python@3.12 xcodegen
 
-      - name: Build core + app (device)
-        run: bash .ci/build-ios.sh device
+      - name: Build core (device)
+        run: |
+          cmake --preset ios-device
+          cmake --build --preset ios-device --target vita3k --parallel
+          bash ios/Vita3K/scripts/stage-core.sh device
+
+      - name: Build app (device, unsigned)
+        run: |
+          xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \\
+            -configuration Release -sdk iphoneos \\
+            -destination 'generic/platform=iOS' \\
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build

@@ -6,7 +6,7 @@
 # The toolchain file sets everything CMake needs *before* project() runs, so the
 # 13.3 macOS deployment target in the root CMakeLists cannot leak into the iOS build.
 set(CMAKE_SYSTEM_NAME iOS)
-set(CMAKE_SYSTEM_VERSION 26.0)
+set(CMAKE_SYSTEM_VERSION 16.4)
 # Some dependencies test ${CMAKE_SYSTEM_PROCESSOR} unquoted; keep it defined.
 set(CMAKE_SYSTEM_PROCESSOR arm64)
 

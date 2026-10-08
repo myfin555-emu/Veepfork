@@ -7,7 +7,7 @@
 # device one: even though both are arm64, the SDKs (and their system libraries)
 # are different and the artifacts are not interchangeable.
 set(CMAKE_SYSTEM_NAME iOS)
-set(CMAKE_SYSTEM_VERSION 26.0)
+set(CMAKE_SYSTEM_VERSION 16.4)
 # Some dependencies test ${CMAKE_SYSTEM_PROCESSOR} unquoted; keep it defined.
 set(CMAKE_SYSTEM_PROCESSOR arm64)
 
