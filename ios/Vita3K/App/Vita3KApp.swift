@@ -71,8 +71,8 @@ struct Vita3KApp: App {
                 .environmentObject(controller)
                 .environment(\.locale, (AppLanguage(rawValue: language) ?? .english).locale)
                 .onAppear { AppOrientation.apply() }
-                .onChange(of: forceLandscape) { _, _ in AppOrientation.apply() }
-                .onChange(of: scenePhase) { _, phase in
+                .onChange(of: forceLandscape) { _ in AppOrientation.apply() }
+                .onChange(of: scenePhase) { phase in
                     if phase == .active { AppOrientation.apply() }
                 }
         }

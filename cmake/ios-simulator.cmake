@@ -13,7 +13,7 @@ set(CMAKE_SYSTEM_PROCESSOR arm64)
 
 set(CMAKE_OSX_SYSROOT iphonesimulator)
 set(CMAKE_OSX_ARCHITECTURES arm64)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 26.0)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 16.4)
 
 # The iOS adapters (bridge, frame host, JIT arena) are Objective-C++; the root
 # CMakeLists enables OBJCXX for the build (enable_language cannot run inside a

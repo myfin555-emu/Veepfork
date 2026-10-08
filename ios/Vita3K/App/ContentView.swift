@@ -34,7 +34,7 @@ struct ContentView: View {
             // once by the control poller; an explicit call here would sync
             // again right after the JIT check.
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             switch phase {
             case .background, .inactive:
                 wasAway = true
@@ -48,12 +48,12 @@ struct ContentView: View {
                 break
             }
         }
-        .onChange(of: controller.autoBootTitle) { _, title in
+        .onChange(of: controller.autoBootTitle) { title in
             guard let title else { return }
             controller.autoBootTitle = nil
             bootWhenReady(title)
         }
-        .onChange(of: controller.ctlNextTitle) { _, next in
+        .onChange(of: controller.ctlNextTitle) { next in
             guard let next else { return }
             controller.ctlNextTitle = nil
             surfaceRequest = nil

@@ -15,7 +15,7 @@ The project is focused on bringing Vita emulation to modern Apple devices while 
 
 ## Features
 
-- **iOS 26+ support**
+- **iOS 16.4+ support**
 - Tested on **iPhone 17 Pro**
 - **JIT support through StikDebug**
 - **iCloud synchronization for save data**
@@ -70,7 +70,7 @@ The purpose of Veeb is not to replace Vita3K, but to adapt and experiment with i
 
 Veeb currently targets:
 
-- **iOS 26 or newer**
+- **iOS 16.4 or newer**
 - ARM64 Apple devices
 - JIT execution through StikDebug
 

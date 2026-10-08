@@ -88,7 +88,7 @@ struct GameConfigView: View {
     private var perGameSection: some View {
         Section {
             Toggle("Enable CPU Optimizations", isOn: $cpuOpt)
-                .onChange(of: cpuOpt) { _, on in guard !loading else { return }; set("cpu_opt", on ? "1" : "0") }
+                .onChange(of: cpuOpt) { on in guard !loading else { return }; set("cpu_opt", on ? "1" : "0") }
             Picker("Cache JIT por thread", selection: Binding(
                 get: { jitCacheMiB },
                 set: { size in
@@ -123,16 +123,16 @@ struct GameConfigView: View {
             Text("Rendering Accuracy: Alta pode melhorar a precisão dos gráficos, com possível redução de desempenho.")
                 .font(.caption).foregroundStyle(.secondary)
             Toggle("Disable Surface Sync", isOn: $disableSurfaceSync)
-                .onChange(of: disableSurfaceSync) { _, on in guard !loading else { return }; set("disable_surface_sync", on ? "1" : "0") }
+                .onChange(of: disableSurfaceSync) { on in guard !loading else { return }; set("disable_surface_sync", on ? "1" : "0") }
             Toggle("Asynchronous Pipeline Compilation", isOn: $asyncPipeline)
-                .onChange(of: asyncPipeline) { _, on in guard !loading else { return }; set("async_pipeline_compilation", on ? "1" : "0") }
+                .onChange(of: asyncPipeline) { on in guard !loading else { return }; set("async_pipeline_compilation", on ? "1" : "0") }
             Picker("Internal Resolution Upscaling", selection: $resolutionIdx) {
                 ForEach(resolutions.indices, id: \.self) { i in
                     Text(resolutions[i].formatted() + "x").tag(i)
                 }
             }
             .pickerStyle(.menu)
-            .onChange(of: resolutionIdx) { _, i in
+            .onChange(of: resolutionIdx) { i in
                 guard !loading else { return }
                 set("resolution_multiplier", String(resolutions[i]))
             }
@@ -142,12 +142,12 @@ struct GameConfigView: View {
                 }
             }
             .pickerStyle(.menu)
-            .onChange(of: anisotropicIdx) { _, i in
+            .onChange(of: anisotropicIdx) { i in
                 guard !loading else { return }
                 set("anisotropic_filtering", String(anisotropics[i]))
             }
             Toggle("Enable Shader Cache", isOn: $shaderCache)
-                .onChange(of: shaderCache) { _, on in guard !loading else { return }; set("shader_cache", on ? "1" : "0") }
+                .onChange(of: shaderCache) { on in guard !loading else { return }; set("shader_cache", on ? "1" : "0") }
             Button {
                 clearShaders()
             } label: {
@@ -159,9 +159,9 @@ struct GameConfigView: View {
             }
             .disabled(clearing)
             Toggle("FPS Hack", isOn: $fpsHack)
-                .onChange(of: fpsHack) { _, on in guard !loading else { return }; set("fps_hack", on ? "1" : "0") }
+                .onChange(of: fpsHack) { on in guard !loading else { return }; set("fps_hack", on ? "1" : "0") }
             Toggle("Enable Texture Cache", isOn: $textureCache)
-                .onChange(of: textureCache) { _, on in guard !loading else { return }; set("texture_cache", on ? "1" : "0") }
+                .onChange(of: textureCache) { on in guard !loading else { return }; set("texture_cache", on ? "1" : "0") }
         } header: {
             Text("CPU e GPU (este jogo)")
         } footer: {
@@ -177,13 +177,13 @@ struct GameConfigView: View {
                 }
             }
             .pickerStyle(.menu)
-            .onChange(of: logLevel) { _, lvl in
+            .onChange(of: logLevel) { lvl in
                 guard !loading else { return }
                 set("log_level", String(lvl))
             }
             .accessibilityIdentifier("game-log-level")
             Toggle("Log Compatibility Warnings", isOn: $logCompatWarn)
-                .onChange(of: logCompatWarn) { _, on in guard !loading else { return }; set("log_compat_warn", on ? "1" : "0") }
+                .onChange(of: logCompatWarn) { on in guard !loading else { return }; set("log_compat_warn", on ? "1" : "0") }
                 .disabled(logLevel == 6)
         } header: {
             Text("Logs (este jogo)")
@@ -195,10 +195,10 @@ struct GameConfigView: View {
     private var globalSection: some View {
         Section {
             Toggle("Show Shader Compilation Hint", isOn: $showCompileHint)
-                .onChange(of: showCompileHint) { _, on in guard !loading else { return }; set("show_compile_shaders", on ? "1" : "0") }
+                .onChange(of: showCompileHint) { on in guard !loading else { return }; set("show_compile_shaders", on ? "1" : "0") }
             Toggle("Performance Overlay", isOn: $perfOverlay)
                 .accessibilityIdentifier("performance-overlay-toggle")
-                .onChange(of: perfOverlay) { _, on in
+                .onChange(of: perfOverlay) { on in
                     guard !loading else { return }
                     UserDefaults.standard.set(on, forKey: "emulation.showStatus")
                 }
