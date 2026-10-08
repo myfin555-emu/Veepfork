@@ -4,7 +4,7 @@
 
 ![](logo.png)
 
-**Veeb** is an experimental PlayStation Vita emulator built specifically for **iOS 26 and newer**.
+**Veeb** is an experimental PlayStation Vita emulator built specifically for **iOS 16.4 and newer**.
 
 The project is focused on bringing Vita emulation to modern Apple devices while providing an iOS-native experience, including controller support, iCloud save synchronization, and JIT execution through **StikDebug**.
 
