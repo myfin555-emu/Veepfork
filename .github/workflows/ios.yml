@@ -31,9 +31,9 @@ jobs:
 
       - name: Build app (simulator)
         run: |
-          xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \\
-            -configuration Release -sdk iphonesimulator \\
-            -destination 'generic/platform=iOS Simulator' \\
+          xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \
+            -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
 
   ios-device:
@@ -57,7 +57,7 @@ jobs:
 
       - name: Build app (device, unsigned)
         run: |
-          xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \\
-            -configuration Release -sdk iphoneos \\
-            -destination 'generic/platform=iOS' \\
+          xcodebuild -project ios/Vita3K/Vita3K.xcodeproj -scheme Vita3K \
+            -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
