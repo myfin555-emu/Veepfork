@@ -52,8 +52,12 @@ final class MetalSurfaceView: UIView {
         isAccessibilityElement = true
         accessibilityLabel = L10n.text("Tela do jogo")
         accessibilityIdentifier = "game-surface"
-        registerForTraitChanges([UITraitDisplayScale.self]) { (view: MetalSurfaceView, _: UITraitCollection) in
-            view.setNeedsLayout()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.displayScale != traitCollection.displayScale {
+            setNeedsLayout()
         }
     }
 
